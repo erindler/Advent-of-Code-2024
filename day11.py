@@ -1,45 +1,54 @@
+
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
-def blink(numbers: list[int]) -> list[int]:
-    result = []  # Create a new list to store the modified results
-    i = 0
+from collections import defaultdict
     
-    while i < len(numbers):
-        if numbers[i] == 0:
-            result.append(1)
-        elif len(str(numbers[i])) % 2 == 0:
+def blink(numbers: defaultdict[int]) -> defaultdict[int]:
+    """Calculates the new format of the stones after blinking according to the rules specified in AoC.
+    For this a defaultdict is being used where the key keeps track of the number and this causes it to
+    be memory efficient as well as time efficient. This is because the number of each valued stone is 
+    represented by the key with the value as the number of times it appears in the sequence. Thus we 
+    know the solution for the calculation for one number will be identical to all of the same numbers.
+    This also gives back the new dictionary after completing.
+
+    Args:
+        numbers (defaultdict[int]): The initial state of the stones.
+
+    Returns:
+        defaultdict[int]: The state of the stones after the blink
+    """
+    newDict = defaultdict(int)
+    for number in numbers:
+        if number == 0:
+            newDict[1] += numbers[0]
+        elif len(str(number)) % 2 == 0:
             # Instead of converting back and forth, do the logic directly
-            num = numbers[i]
-            midIndex = len(str(num)) // 2
-            left = num // (10 ** midIndex)
-            right = num % (10 ** midIndex)
-            result.append(left)
-            result.append(right)
+            midIndex = len(str(number)) // 2
+            left = number // (10 ** midIndex)
+            right = number % (10 ** midIndex)
+            newDict[left] += numbers[number]
+            newDict[right] += numbers[number]
             #i += 1  # Skip the next element, as it's been inserted already
         else:
-            result.append(numbers[i] * 2024)
-        
-        i += 1
+            newDict[number * 2024] += numbers[number]
+    return newDict
+    
+def blink_num(numbers: defaultdict[int], numBlinks: int) -> int:
+    """Blinks a given number of times.
 
-    return result
-    
-    
-def blink_num(numbers: list[int], numBlinks) -> list[int]:
+    Args:
+        numbers (defaultdict[int]): The defaultdict which represents the starting state of the stones.
+        numBlinks (int): The number of times to blink.
+
+    Returns:
+        int: The number of stones in the final state of the stones.
+    """
     for i in range(numBlinks):
-        print(f"Starting blink {i + 1}")
-        if len(numbers) < NUM_THREADS:
-            numbers = blink(numbers)
-        chunk_size = len(numbers) // NUM_THREADS
-        remainder = len(numbers) % NUM_THREADS
-        lst = numbers
-        splitNumbers = [lst[i * chunk_size + min(i, remainder):(i + 1) * chunk_size + min(i + 1, remainder)] for i in range(NUM_THREADS)]
-        with ThreadPoolExecutor(max_workers=8) as executor:
-            results = [executor.submit(blink, splitNumbers[i]) for i in range(NUM_THREADS)]
-            output = [result.result() for result in results]
-            numbers = [item for sublist in output for item in sublist]
-    return numbers
+        numbers = blink(numbers)
+    return sum(numbers.values())
 
+# CONSTANTS
 NUM_THREADS = 4
 P1_NUM_BLINKS = 25
 P2_NUM_BLINKS = 75
@@ -47,16 +56,17 @@ P2_NUM_BLINKS = 75
 
 if __name__ == "__main__":
     initial = ""
-    numbers = []
+    numbers = defaultdict(int)
     # Opening the text file and formatting the data
     with open("./Data/day11.txt", "r") as file:
         for line in file:
             initial += line.strip()
-    numbers = initial.split(" ")
-    for i in range(len(numbers)):
-        numbers[i] = int(numbers[i])
-    numStonesP1 = len(blink_num(numbers, P1_NUM_BLINKS))
-    # numStonesP2 = len(blink_num(numbers, P2_NUM_BLINKS))
+    ogList = initial.split(" ")
+    for i in ogList:
+        numbers[int(i)] += 1
+    print(numbers)
+    numStonesP1 = blink_num(numbers, P1_NUM_BLINKS)
+    numStonesP2 = blink_num(numbers, P2_NUM_BLINKS)
     print(f"(Part 1) The number of stones after {P1_NUM_BLINKS} blinks is: {numStonesP1}")
-    # print(f"(Part 2) The number of stones after {P2_NUM_BLINKS} blinks is: {numStonesP2}")
+    print(f"(Part 2) The number of stones after {P2_NUM_BLINKS} blinks is: {numStonesP2}")
     
