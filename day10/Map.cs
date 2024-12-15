@@ -257,4 +257,7 @@ class Map
         return true;
     }
 
+    public int Calculate_Area(HashSet<(int x, int y)> region) {
+        return region.Count;
+    }
 }
